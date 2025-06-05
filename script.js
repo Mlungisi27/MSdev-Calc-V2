@@ -12,6 +12,33 @@ function getLastChar() {
     return display.value.slice(-1);
 }
 
+function safeEval(expression) {
+    try {
+        // Replace x and ÷ with * and /
+        let jsExpression = expression
+            .replace(/x/g, '*')
+            .replace(/÷/g, '/');
+
+        // Only allow numbers, operators, parentheses, dots, and spaces
+        if (!/^[0-9+\-*/.() ]+$/.test(jsExpression)) {
+            throw new Error('Invalid characters in expression');
+        }
+
+        // Evaluate the expression
+        const result = Function('"use strict";return (' + jsExpression + ')')();
+
+        // Check if result is a finite number
+        if (!isFinite(result)) {
+            throw new Error('Result is not a finite number');
+        }
+
+        return result;
+    } catch (error) {
+        console.error('Calculation error:', error);
+        return 'Error';
+    }
+}
+
 function appendToDisplay(value) {
     console.log('Button pressed', value);
 
@@ -116,10 +143,41 @@ function deleteLast(){
     }
 }
 
-function calculate(){
-    console.log('Equals button pressed');
+function calculate() {
+    let expression = display.value;
 
-    alert('Equals button was clicked') ;
+    //Dont calc if display is empty
+    if (expression ===  '0' || expression === '') {
+        return;
+    }
+
+    // Dont calc if last char is an operator
+    if (isOperator(getLastChar())) {
+        return;
+    }
+
+    let result = safeEval(expression);
+
+    if (result === 'Error') {
+        display.value = 'Error';
+        setTimeout(() => {
+            clearDisplay()
+        }, 2000);
+    } else {
+        if (Number.isInteger(result)) {
+            display.value = result.toString();
+        } else {
+            display.value = parseFloat(result.toFixed(10)).toString();
+        } 
+
+
+        justCalculated = true;
+    }
+
+    display.style.backgroundColor = '#d4edda';
+    setTimeout(() => {
+        display.style.backgroundColor = '';
+    }, 300);
 }
 
 document.addEventListener('keydown' , function (event) {
